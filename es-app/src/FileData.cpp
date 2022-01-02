@@ -48,7 +48,11 @@ std::string FileData::getDisplayName() const
 
 std::string FileData::getCleanName() const
 {
-	return Utils::String::removeParenthesis(this->getDisplayName());
+	std::string name = this->getDisplayName();
+	name = Utils::String::removeParenthesis(name);
+	name = Utils::String::removeArticles(name);
+	name = Utils::String::removeSymbols(name);
+	return name;
 }
 
 const std::string FileData::getThumbnailPath() const
