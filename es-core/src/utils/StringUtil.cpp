@@ -251,7 +251,8 @@ namespace Utils
 
 		std::string rearrangeArticles(const std::string& _string)
 		{
-			std::regex search(" *([^/;:-]+), *(an?|the) *($|[/;:-])", std::regex_constants::icase);
+			// match trailing articles only before the first separator, if any
+			std::regex search("^((?:[^/;:&+-]|[^ ][/;:&+-]+[^ ])+), *(an?|the) *($| [/;:&+-])", std::regex_constants::icase);
 			std::string string = std::regex_replace(_string, search, "$2 $1 $3");
 			return trim(string);
 
@@ -261,7 +262,8 @@ namespace Utils
 
 		std::string removeSeparators(const std::string& _string)
 		{
-			std::regex search(" +[/;:-]+ *|[/;:-]+ +", std::regex_constants::icase);
+			// require at least one adjacent space, to match "title - subtitle" but not "compound-word"
+			std::regex search(" +[/;:&+-]+ *|[/;:&+-]+ +", std::regex_constants::icase);
 			std::string string = std::regex_replace(_string, search, " ");
 			return trim(string);
 
