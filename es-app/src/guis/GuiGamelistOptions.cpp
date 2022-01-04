@@ -114,6 +114,12 @@ GuiGamelistOptions::GuiGamelistOptions(Window* window, SystemData* system) : Gui
 		row.addElement(makeArrow(mWindow), false);
 		row.makeAcceptInputHandler(std::bind(&GuiGamelistOptions::openMetaDataEd, this));
 		mMenu.addRow(row);
+
+		row.elements.clear();
+		row.addElement(std::make_shared<TextComponent>(mWindow, "CLEAR THIS GAME'S METADATA", Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
+		row.addElement(makeArrow(mWindow), false);
+		row.makeAcceptInputHandler(std::bind(&GuiGamelistOptions::clearMetadata, this));
+		mMenu.addRow(row);
 	}
 
 	// center the menu
@@ -200,6 +206,13 @@ void GuiGamelistOptions::openMetaDataEd()
 
 	mWindow->pushGui(new GuiMetaDataEd(mWindow, &file->metadata, file->metadata.getMDD(), p, Utils::FileSystem::getFileName(file->getPath()),
 		std::bind(&IGameListView::onFileChanged, ViewController::get()->getGameListView(file->getSystem()).get(), file, FILE_METADATA_CHANGED), deleteBtnFunc));
+}
+
+void GuiGamelistOptions::clearMetadata()
+{
+	FileData* file = getGamelist()->getCursor()->getSourceFileData();
+	file->clearMetadata();
+	// TODO: prompt, save
 }
 
 void GuiGamelistOptions::jumpToLetter()

@@ -50,6 +50,7 @@ public:
 
 	MetaDataList(MetaDataListType type);
 
+	void clear(bool stats = false);
 	void set(const std::string& key, const std::string& value);
 
 	const std::string& get(const std::string& key) const;

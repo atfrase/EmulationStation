@@ -37,6 +37,13 @@ FileData::~FileData()
 	mChildren.clear();
 }
 
+void FileData::clearMetadata()
+{
+	metadata.clear();
+	if(metadata.get("name").empty())
+		metadata.set("name", getDisplayName());
+}
+
 std::string FileData::getDisplayName() const
 {
 	std::string stem = Utils::FileSystem::getStem(mPath);

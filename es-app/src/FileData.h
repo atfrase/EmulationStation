@@ -36,6 +36,7 @@ public:
 	FileData(FileType type, const std::string& path, SystemEnvironmentData* envData, SystemData* system);
 	virtual ~FileData();
 
+	void clearMetadata();
 	virtual const std::string& getName();
 	virtual const std::string& getSortName();
 	inline FileType getType() const { return mType; }

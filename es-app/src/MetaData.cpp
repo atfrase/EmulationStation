@@ -119,6 +119,17 @@ void MetaDataList::appendToXML(pugi::xml_node& parent, bool ignoreDefaults, cons
 	}
 }
 
+void MetaDataList::clear(bool stats)
+{
+	const std::vector<MetaDataDecl>& mdd = getMDD();
+	for(auto iter = mdd.cbegin(); iter != mdd.cend(); iter++)
+	{
+		if (stats || !iter->isStatistic)
+			mMap[iter->key] = iter->defaultValue;
+	}
+	mWasChanged = true;
+}
+
 void MetaDataList::set(const std::string& key, const std::string& value)
 {
 	mMap[key] = value;
