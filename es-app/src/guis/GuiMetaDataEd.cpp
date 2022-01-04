@@ -229,8 +229,15 @@ void GuiMetaDataEd::clear()
 		if(mMetaDataDecl.at(i).isStatistic)
 			continue;
 
-		const std::string& defaultValue = mMetaDataDecl.at(i).defaultValue;
-		mEditors.at(i)->setValue(defaultValue);
+		const std::string& key = mMetaDataDecl.at(i).key;
+		if (key == "name")
+		{
+			mEditors.at(i)->setValue(mScraperParams.game->getDisplayName());
+		}
+		else
+		{
+			mEditors.at(i)->setValue(mMetaDataDecl.at(i).defaultValue);
+		}
 	}
 }
 

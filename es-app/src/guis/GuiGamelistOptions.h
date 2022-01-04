@@ -25,7 +25,6 @@ private:
 	void openMetaDataEd();
 	void startEditMode();
 	void exitEditMode();
-	void clearMetadata();
 	void jumpToLetter();
 
 	MenuComponent mMenu;
