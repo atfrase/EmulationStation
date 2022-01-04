@@ -23,8 +23,8 @@ namespace Utils
 		bool         startsWith             (const std::string& _string, const std::string& _start);
 		bool         endsWith               (const std::string& _string, const std::string& _end);
 		std::string  removeParenthesis      (const std::string& _string);
-		std::string  removeArticles         (const std::string& _string);
-		std::string  removeSymbols          (const std::string& _string);
+		std::string  rearrangeArticles      (const std::string& _string);
+		std::string  removeSeparators       (const std::string& _string);
 		stringVector delimitedStringToVector(const std::string& _string, const std::string& _delimiter, bool sort = false);
 		std::string  vectorToDelimitedString(stringVector _vector, const std::string& _delimiter);
 		std::string  format                 (const char* _string, ...);

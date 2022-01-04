@@ -50,8 +50,8 @@ std::string FileData::getCleanName() const
 {
 	std::string name = this->getDisplayName();
 	name = Utils::String::removeParenthesis(name);
-	name = Utils::String::removeArticles(name);
-	name = Utils::String::removeSymbols(name);
+	name = Utils::String::rearrangeArticles(name);
+	name = Utils::String::removeSeparators(name);
 	return name;
 }
 
