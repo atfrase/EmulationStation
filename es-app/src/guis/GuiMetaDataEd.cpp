@@ -141,6 +141,7 @@ GuiMetaDataEd::GuiMetaDataEd(Window* window, MetaDataList* md, const std::vector
 
 	if(!scraperParams.system->hasPlatformId(PlatformIds::PLATFORM_IGNORE))
 		buttons.push_back(std::make_shared<ButtonComponent>(mWindow, "SCRAPE", "scrape", std::bind(&GuiMetaDataEd::fetch, this)));
+	buttons.push_back(std::make_shared<ButtonComponent>(mWindow, "CLEAR", "clear", std::bind(&GuiMetaDataEd::clear, this)));
 
 	buttons.push_back(std::make_shared<ButtonComponent>(mWindow, "SAVE", "save", [&] { save(); delete this; }));
 	buttons.push_back(std::make_shared<ButtonComponent>(mWindow, "CANCEL", "cancel", [&] { delete this; }));
@@ -218,6 +219,18 @@ void GuiMetaDataEd::fetchDone(const ScraperSearchResult& result)
 
 		const std::string& key = mMetaDataDecl.at(i).key;
 		mEditors.at(i)->setValue(result.mdl.get(key));
+	}
+}
+
+void GuiMetaDataEd::clear()
+{
+	for(unsigned int i = 0; i < mEditors.size(); i++)
+	{
+		if(mMetaDataDecl.at(i).isStatistic)
+			continue;
+
+		const std::string& defaultValue = mMetaDataDecl.at(i).defaultValue;
+		mEditors.at(i)->setValue(defaultValue);
 	}
 }
 
