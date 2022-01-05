@@ -6,6 +6,7 @@
 #include "components/NinePatchComponent.h"
 #include "scrapers/Scraper.h"
 #include "GuiComponent.h"
+#include <memory>
 
 class ScraperSearchComponent;
 class TextComponent;
@@ -13,7 +14,7 @@ class TextComponent;
 class GuiScraperMulti : public GuiComponent
 {
 public:
-	GuiScraperMulti(Window* window, const std::queue<ScraperSearchParams>& searches, bool approveResults);
+	GuiScraperMulti(Window* window, const std::deque<ScraperSearchParams>& searches, bool approveResults);
 	virtual ~GuiScraperMulti();
 
 	void onSizeChanged() override;
@@ -21,6 +22,7 @@ public:
 
 private:
 	void acceptResult(const ScraperSearchResult& result);
+	void backtrack();
 	void skip();
 	void doNextSearch();
 
@@ -30,7 +32,9 @@ private:
 	unsigned int mCurrentGame;
 	unsigned int mTotalSuccessful;
 	unsigned int mTotalSkipped;
-	std::queue<ScraperSearchParams> mSearchQueue;
+	std::deque<ScraperSearchParams> mSearchQueue;
+	std::deque<ScraperSearchParams> mSearchHistory;
+	std::deque<std::unique_ptr<MetaDataList>> mMetadataHistory;
 
 	NinePatchComponent mBackground;
 	ComponentGrid mGrid;

@@ -28,7 +28,7 @@ public:
 private:
 	void pressedStart();
 	void start();
-	std::queue<ScraperSearchParams> getSearches(std::vector<SystemData*> systems, GameFilterFunc selector);
+	std::deque<ScraperSearchParams> getSearches(std::vector<SystemData*> systems, GameFilterFunc selector);
 
 	std::shared_ptr< OptionListComponent<GameFilterFunc> > mFilters;
 	std::shared_ptr< OptionListComponent<SystemData*> > mSystems;

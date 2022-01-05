@@ -60,7 +60,7 @@ void GuiScraperStart::pressedStart()
 
 void GuiScraperStart::start()
 {
-	std::queue<ScraperSearchParams> searches = getSearches(mSystems->getSelectedObjects(), mFilters->getSelected());
+	std::deque<ScraperSearchParams> searches = getSearches(mSystems->getSelectedObjects(), mFilters->getSelected());
 
 	if(searches.empty())
 	{
@@ -73,9 +73,9 @@ void GuiScraperStart::start()
 	}
 }
 
-std::queue<ScraperSearchParams> GuiScraperStart::getSearches(std::vector<SystemData*> systems, GameFilterFunc selector)
+std::deque<ScraperSearchParams> GuiScraperStart::getSearches(std::vector<SystemData*> systems, GameFilterFunc selector)
 {
-	std::queue<ScraperSearchParams> queue;
+	std::deque<ScraperSearchParams> queue;
 	for(auto sys = systems.cbegin(); sys != systems.cend(); sys++)
 	{
 		std::vector<FileData*> games = (*sys)->getRootFolder()->getFilesRecursive(GAME);
@@ -87,7 +87,7 @@ std::queue<ScraperSearchParams> GuiScraperStart::getSearches(std::vector<SystemD
 				search.game = *game;
 				search.system = *sys;
 
-				queue.push(search);
+				queue.push_back(search);
 			}
 		}
 	}

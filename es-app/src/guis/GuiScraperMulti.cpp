@@ -10,8 +10,9 @@
 #include "PowerSaver.h"
 #include "SystemData.h"
 #include "Window.h"
+#include <memory>
 
-GuiScraperMulti::GuiScraperMulti(Window* window, const std::queue<ScraperSearchParams>& searches, bool approveResults) :
+GuiScraperMulti::GuiScraperMulti(Window* window, const std::deque<ScraperSearchParams>& searches, bool approveResults) :
 	GuiComponent(window), mBackground(window, ":/frame.png"), mGrid(window, Vector2i(1, 5)),
 	mSearchQueue(searches)
 {
@@ -49,6 +50,11 @@ GuiScraperMulti::GuiScraperMulti(Window* window, const std::queue<ScraperSearchP
 
 	if(approveResults)
 	{
+		buttons.push_back(std::make_shared<ButtonComponent>(mWindow, "BACK", "back", [&] {
+			backtrack();
+			mGrid.resetCursor();
+		}));
+
 		buttons.push_back(std::make_shared<ButtonComponent>(mWindow, "INPUT", "search", [&] {
 			mSearchComp->openInputScreen(mSearchQueue.front());
 			mGrid.resetCursor();
@@ -113,18 +119,53 @@ void GuiScraperMulti::acceptResult(const ScraperSearchResult& result)
 {
 	ScraperSearchParams& search = mSearchQueue.front();
 
+	mSearchHistory.push_back(search);
+	mMetadataHistory.emplace_back(new MetaDataList(search.game->metadata));
+
 	search.game->metadata = result.mdl;
 	updateGamelist(search.system);
 
-	mSearchQueue.pop();
+	mSearchQueue.pop_front();
 	mCurrentGame++;
 	mTotalSuccessful++;
 	doNextSearch();
 }
 
+void GuiScraperMulti::backtrack()
+{
+	if(mSearchHistory.empty())
+		return;
+
+	ScraperSearchParams& search = mSearchHistory.back();
+	const auto& mdl = mMetadataHistory.back();
+
+	mSearchHistory.pop_back();
+	mMetadataHistory.pop_back();
+
+	if(mdl != nullptr)
+	{
+		search.game->metadata = *mdl;
+		updateGamelist(search.system);
+		mTotalSuccessful--;
+	}
+	else
+	{
+		mTotalSkipped--;
+	}
+
+	mSearchQueue.push_front(search);
+	mCurrentGame--;
+	doNextSearch();
+}
+
 void GuiScraperMulti::skip()
 {
-	mSearchQueue.pop();
+	ScraperSearchParams& search = mSearchQueue.front();
+
+	mSearchHistory.push_back(search);
+	mMetadataHistory.push_back(nullptr);
+
+	mSearchQueue.pop_front();
 	mCurrentGame++;
 	mTotalSkipped++;
 	doNextSearch();
