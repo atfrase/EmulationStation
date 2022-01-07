@@ -141,6 +141,9 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 			// we are configuring
 			if(input.value != 0)
 			{
+				mHeldInputs.push_back(input);
+				mHeldInputsUnique.insert(std::pair<InputType,int>(input.type, input.id));
+
 				// input down
 				// if we're already holding something, ignore this, otherwise plan to map this input
 				if(mHoldingInput)
@@ -159,6 +162,10 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 					return true;
 
 				mHoldingInput = false;
+
+			        std::stringstream ss;
+		                ss << "Detected " << mHeldInputs.size() << " inputs, " << mHeldInputsUnique.size() << " unique";
+			        mWindow->pushGui(new GuiMsgBox(mWindow, ss.str(), "OK", [&] { delete this; }));
 
 				if(assign(mHeldInput, i))
 					rowDone(); // if successful, move cursor/stop configuring - if not, we'll just try again

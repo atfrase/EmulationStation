@@ -6,6 +6,7 @@
 #include "components/ComponentGrid.h"
 #include "components/NinePatchComponent.h"
 #include "GuiComponent.h"
+#include <set>
 
 class ComponentList;
 class TextComponent;
@@ -48,6 +49,8 @@ private:
 
 	bool mHoldingInput;
 	Input mHeldInput;
+	std::vector<Input> mHeldInputs;
+	std::set<std::pair<InputType,int>> mHeldInputsUnique;
 	int mHeldTime;
 	int mHeldInputId;
 	bool mSkipAxis;
