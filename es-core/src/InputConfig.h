@@ -52,17 +52,46 @@ public:
 	{
 	}
 
-	std::string getHatDir(int val)
+	std::string getHatDir(int val, bool cardinal = false)
 	{
+		const int upOrDown = SDL_HAT_UP | SDL_HAT_DOWN;
+		const int leftOrRight = SDL_HAT_LEFT | SDL_HAT_RIGHT;
+		std::stringstream stream;
+
+		if(val == SDL_HAT_CENTERED) // == 0
+			return "centered";
+
+		// if there's an up or down, drop left and right to make it cardinal;
+		// if there's no up or down, it can't be diagonal anyway
+		if(cardinal && (val & upOrDown))
+			val = val & upOrDown;
+
 		if(val & SDL_HAT_UP)
-			return "up";
-		else if(val & SDL_HAT_DOWN)
-			return "down";
-		else if(val & SDL_HAT_LEFT)
-			return "left";
-		else if(val & SDL_HAT_RIGHT)
-			return "right";
-		return "neutral?";
+		{
+			stream << "up";
+			if(val & SDL_HAT_DOWN)
+				stream << "&down";
+		}
+		else if (val & SDL_HAT_DOWN)
+		{
+			stream << "down";
+		}
+
+		if((val & upOrDown) && (val & leftOrRight))
+			stream << "-";
+
+		if(val & SDL_HAT_LEFT)
+		{
+			stream << "left";
+			if(val & SDL_HAT_RIGHT)
+				stream << "&right";
+		}
+		else if (val & SDL_HAT_RIGHT)
+		{
+			stream << "right";
+		}
+
+		return stream.str();
 	}
 
 	std::string getCECButtonName(int keycode)
