@@ -31,6 +31,7 @@ public:
 	InputType type;
 	int id;
 	int value;
+	int rawvalue;
 	bool configured;
 
 	Input()
@@ -39,10 +40,15 @@ public:
 		configured = false;
 		id = -1;
 		value = -999;
+		rawvalue = -999;
 		type = TYPE_COUNT;
 	}
 
-	Input(int dev, InputType t, int i, int val, bool conf) : device(dev), type(t), id(i), value(val), configured(conf)
+	Input(int dev, InputType t, int i, int val, bool conf) : device(dev), type(t), id(i), value(val), rawvalue(val), configured(conf)
+	{
+	}
+
+	Input(int dev, InputType t, int i, int val, int rawval, bool conf) : device(dev), type(t), id(i), value(val), rawvalue(rawval), configured(conf)
 	{
 	}
 

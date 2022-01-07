@@ -220,7 +220,7 @@ bool InputManager::parseEvent(const SDL_Event& ev, Window* window)
 				else
 					normValue = -1;
 
-			window->input(getInputConfigByDevice(ev.jaxis.which), Input(ev.jaxis.which, TYPE_AXIS, ev.jaxis.axis, normValue, false));
+			window->input(getInputConfigByDevice(ev.jaxis.which), Input(ev.jaxis.which, TYPE_AXIS, ev.jaxis.axis, normValue, ev.jaxis.value, false));
 			causedEvent = true;
 		}
 
