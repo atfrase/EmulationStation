@@ -164,7 +164,11 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 				mHoldingInput = false;
 
 			        std::stringstream ss;
-		                ss << "Detected " << mHeldInputs.size() << " inputs, " << mHeldInputsUnique.size() << " unique";
+		                ss << "Detected " << mHeldInputs.size() << " inputs:";
+				for(auto it = mHeldInputs.begin();  it != mHeldInputs.end();  it++)
+				{
+					ss << "\n" << (*it).string();
+				}
 			        mWindow->pushGui(new GuiMsgBox(mWindow, ss.str(), "OK", [&] { delete this; }));
 
 				if(assign(mHeldInput, i))
