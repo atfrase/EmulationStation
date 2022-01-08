@@ -31,7 +31,6 @@ public:
 	InputType type;
 	int id;
 	int value;
-	int rawvalue;
 	bool configured;
 
 	Input()
@@ -40,16 +39,40 @@ public:
 		configured = false;
 		id = -1;
 		value = -999;
-		rawvalue = -999;
 		type = TYPE_COUNT;
 	}
 
-	Input(int dev, InputType t, int i, int val, bool conf) : device(dev), type(t), id(i), value(val), rawvalue(val), configured(conf)
+	Input(int dev, InputType t, int i, int val, bool conf) : device(dev), type(t), id(i), value(val), configured(conf)
 	{
 	}
 
-	Input(int dev, InputType t, int i, int val, int rawval, bool conf) : device(dev), type(t), id(i), value(val), rawvalue(rawval), configured(conf)
+	bool operator==(const Input& other) const
 	{
+		return device == other.device && type == other.type && id == other.id && value == other.value;
+	}
+
+	bool operator<(const Input& other) const
+	{
+		if(device != other.device)
+			return device < other.device;
+		if(type != other.type)
+			return type < other.type;
+		if(id != other.id)
+			return id < other.id;
+		return value < other.value;
+	}
+
+	int numHatDirs() const
+	{
+		if(type != TYPE_HAT)
+			return 0;
+
+		return (
+			((value & SDL_HAT_UP) ? 1 : 0) +
+			((value & SDL_HAT_DOWN) ? 1 : 0) +
+			((value & SDL_HAT_LEFT) ? 1 : 0) +
+			((value & SDL_HAT_RIGHT) ? 1 : 0)
+		);
 	}
 
 	std::string getHatDir(int val, bool cardinal = false)

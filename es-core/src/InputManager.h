@@ -57,6 +57,8 @@ public:
 
 	InputConfig* getInputConfigByDevice(int deviceId);
 
+	int getJoystickAxisRawValue(SDL_JoystickID joyId, int axisId);
+
 	bool parseEvent(const SDL_Event& ev, Window* window);
 };
 

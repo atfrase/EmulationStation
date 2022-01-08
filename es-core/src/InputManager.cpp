@@ -202,6 +202,11 @@ InputConfig* InputManager::getInputConfigByDevice(int device)
 		return mInputConfigs[device];
 }
 
+int InputManager::getJoystickAxisRawValue(SDL_JoystickID joyId, int axisId)
+{
+	return mPrevAxisValues[joyId][axisId];
+}
+
 bool InputManager::parseEvent(const SDL_Event& ev, Window* window)
 {
 	bool causedEvent = false;
@@ -220,7 +225,7 @@ bool InputManager::parseEvent(const SDL_Event& ev, Window* window)
 				else
 					normValue = -1;
 
-			window->input(getInputConfigByDevice(ev.jaxis.which), Input(ev.jaxis.which, TYPE_AXIS, ev.jaxis.axis, normValue, ev.jaxis.value, false));
+			window->input(getInputConfigByDevice(ev.jaxis.which), Input(ev.jaxis.which, TYPE_AXIS, ev.jaxis.axis, normValue, false));
 			causedEvent = true;
 		}
 
