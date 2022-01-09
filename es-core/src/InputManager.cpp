@@ -210,21 +210,18 @@ int InputManager::getJoystickAxisRawValue(SDL_JoystickID joyId, int axisId)
 bool InputManager::parseEvent(const SDL_Event& ev, Window* window)
 {
 	bool causedEvent = false;
+	int prevValue, normValue;
 	switch(ev.type)
 	{
 	case SDL_JOYAXISMOTION:
-		//if it switched boundaries
-		if((abs(ev.jaxis.value) > DEADZONE) != (abs(mPrevAxisValues[ev.jaxis.which][ev.jaxis.axis]) > DEADZONE))
-		{
-			int normValue;
-			if(abs(ev.jaxis.value) <= DEADZONE)
-				normValue = 0;
-			else
-				if(ev.jaxis.value > 0)
-					normValue = 1;
-				else
-					normValue = -1;
+		// normalize the old and new values to -1/0/1 states around +/- DEADZONE
+		prevValue = mPrevAxisValues[ev.jaxis.which][ev.jaxis.axis];
+		prevValue = (prevValue < -DEADZONE) ? -1 : (prevValue > DEADZONE);
+		normValue = (ev.jaxis.value < -DEADZONE) ? -1 : (ev.jaxis.value > DEADZONE);
 
+		//if it switched boundaries
+		if(normValue != prevValue)
+		{
 			window->input(getInputConfigByDevice(ev.jaxis.which), Input(ev.jaxis.which, TYPE_AXIS, ev.jaxis.axis, normValue, false));
 			causedEvent = true;
 		}
