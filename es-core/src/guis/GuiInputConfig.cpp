@@ -6,6 +6,7 @@
 #include "InputManager.h"
 #include "Log.h"
 #include "Window.h"
+#include <algorithm>
 
 struct InputConfigStructure
 {
@@ -50,9 +51,18 @@ static const InputConfigStructure GUI_INPUT_CONFIG_LIST[inputCount] =
 
 #define HOLD_TO_SKIP_MS 1000
 
+const int inputTypeOrder[InputType::TYPE_COUNT + 1] = {
+	0, // TYPE_AXIS
+	3, // TYPE_BUTTON
+	1, // TYPE_HAT
+	4, // TYPE_KEY
+	2, // TYPE_CEC_BUTTON
+	99 // TYPE_COUNT
+};
+
 GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfigureAll, const std::function<void()>& okCallback) : GuiComponent(window),
 	mBackground(window, ":/frame.png"), mGrid(window, Vector2i(1, 7)),
-	mTargetConfig(target), mHoldingInput(false), mBusyAnim(window)
+	mTargetConfig(target), mBusyAnim(window)
 {
 	LOG(LogInfo) << "Configuring device " << target->getDeviceId() << " (" << target->getDeviceName() << ").";
 
@@ -61,6 +71,7 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 
 	mConfiguringAll = reconfigureAll;
 	mConfiguringRow = mConfiguringAll;
+	mHeldInputCount = 0;
 
 	addChild(&mBackground);
 	addChild(&mGrid);
@@ -141,41 +152,51 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 			// we are configuring
 			if(input.value != 0)
 			{
-				mHeldInputs.push_back(input);
-				mHeldInputsUnique.insert(std::pair<InputType,int>(input.type, input.id));
+				// on the first held input, start the skip timer
+				if(mHeldInputs.size() == 0)
+				{
+					mHeldTime = 0;
+					mHeldInputId = i;
+				}
 
-				// input down
-				// if we're already holding something, ignore this, otherwise plan to map this input
-				if(mHoldingInput)
-					return true;
-
-				mHoldingInput = true;
-				mHeldInput = input;
-				mHeldTime = 0;
-				mHeldInputId = i;
-
-				return true;
-			}else{
-				// input up
-				// make sure we were holding something and we let go of what we were previously holding
-				if(!mHoldingInput || mHeldInput.device != input.device || mHeldInput.id != input.id || mHeldInput.type != input.type)
-					return true;
-
-				mHoldingInput = false;
-
-			        std::stringstream ss;
-		                ss << "Detected " << mHeldInputs.size() << " inputs:";
+				// add or update the held input record
+				auto heldIt = mHeldInputs.find(input);
+				if(heldIt == mHeldInputs.end())
+				{
+					mHeldInputs[input] = HeldInput(++mHeldInputCount, input.value);
+				}
+				else
+				{
+					heldIt->second.order = ++mHeldInputCount;
+					heldIt->second.curvalue = input.value;
+					// maxvalue only matters for axes, and they're polled in update() instead
+				}
+			}
+			else
+			{
+				// on input release, update matching held input(s) and check if any others remain held
+				bool done = true;
 				for(auto it = mHeldInputs.begin();  it != mHeldInputs.end();  it++)
 				{
-					ss << "\n" << (*it).string();
+					// this could match more than once; a hat for example
+					// may be logged as held for values UP, UP|RIGHT, and RIGHT
+					// all of which will be cleared when it returns to CENTER (0)
+					if(it->first.device == input.device && it->first.type == input.type && it->first.id == input.id)
+						it->second.curvalue = 0;
+					else if (it->second.curvalue != 0)
+						done = false;
 				}
-			        mWindow->pushGui(new GuiMsgBox(mWindow, ss.str(), "OK", [&] { delete this; }));
 
-				if(assign(mHeldInput, i))
-					rowDone(); // if successful, move cursor/stop configuring - if not, we'll just try again
-
-				return true;
+				// if all held inputs have been released, assign the best one and clean up
+				if(done)
+				{
+					if(assign(getBestHeldInput(), i))
+						rowDone();
+					mHeldInputs.clear();
+				}
 			}
+
+			return true;
 		};
 
 		mList->addRow(row);
@@ -249,30 +270,99 @@ void GuiInputConfig::onSizeChanged()
 
 void GuiInputConfig::update(int deltaTime)
 {
-	if(mConfiguringRow && mHoldingInput && GUI_INPUT_CONFIG_LIST[mHeldInputId].skippable)
+	if(mConfiguringRow && mHeldInputs.size())
 	{
-		int prevSec = mHeldTime / 1000;
-		mHeldTime += deltaTime;
-		int curSec = mHeldTime / 1000;
-
-		if(mHeldTime >= HOLD_TO_SKIP_MS)
+		if(GUI_INPUT_CONFIG_LIST[mHeldInputId].skippable)
 		{
-			setNotDefined(mMappings.at(mHeldInputId));
-			clearAssignment(mHeldInputId);
-			mHoldingInput = false;
-			rowDone();
-		}else{
-			if(prevSec != curSec)
+			int prevSec = mHeldTime / 1000;
+			mHeldTime += deltaTime;
+			int curSec = mHeldTime / 1000;
+
+			if(mHeldTime >= HOLD_TO_SKIP_MS)
 			{
-				// crossed the second boundary, update text
-				const auto& text = mMappings.at(mHeldInputId);
-				std::stringstream ss;
-				ss << "HOLD FOR " << HOLD_TO_SKIP_MS/1000 - curSec << "S TO SKIP";
-				text->setText(ss.str());
-				text->setColor(0x777777FF);
+				setNotDefined(mMappings.at(mHeldInputId));
+				clearAssignment(mHeldInputId);
+				mHeldInputs.clear();
+				rowDone();
+				return;
+			}else{
+				if(prevSec != curSec)
+				{
+					// crossed the second boundary, update text
+					const auto& text = mMappings.at(mHeldInputId);
+					std::stringstream ss;
+					ss << "HOLD FOR " << HOLD_TO_SKIP_MS/1000 - curSec << "S TO SKIP";
+					text->setText(ss.str());
+					text->setColor(0x777777FF);
+				}
+			}
+		}
+
+		// poll held axes to track max(abs(val))
+		for(auto it = mHeldInputs.begin();  it != mHeldInputs.end();  it++)
+		{
+			if(it->first.type == TYPE_AXIS && it->second.curvalue != 0)
+			{
+				// the same axis could be in mHeldInputs for both -1 and +1,
+				// but we should only update max for the one whose sign still matches
+				int rawvalue = InputManager::getInstance()->getJoystickAxisRawValue(it->first.device, it->first.id);
+				if((rawvalue > 0 && it->second.curvalue > 0) || (rawvalue < 0 && it->second.curvalue < 0))
+					it->second.maxvalue = std::max(it->second.maxvalue, abs(rawvalue));
 			}
 		}
 	}
+}
+
+Input GuiInputConfig::getBestHeldInput()
+{
+	std::vector<Input> inputs;
+
+	// copy held inputs to a vector
+	for(auto it = mHeldInputs.cbegin();  it != mHeldInputs.cend();  it++)
+	{
+		inputs.push_back(it->first);
+	}
+
+	// sort by preference
+	std::sort(inputs.begin(), inputs.end(), [this](const Input& a, const Input& b) -> bool
+	{
+		int aVal, bVal;
+
+		// prefer higher detail types (axis has 64k values, hat has 8) over lower detail (button, key have 2)
+		if(a.type != b.type)
+			return inputTypeOrder[a.type] < inputTypeOrder[b.type];
+
+		// for axes, prefer higher abs raw value (-30000 outweighs +1000)
+		if(a.type == TYPE_AXIS)
+		{
+			aVal = mHeldInputs[a].maxvalue;
+			bVal = mHeldInputs[b].maxvalue;
+			if(aVal != bVal)
+				return aVal > bVal;
+		}
+
+		// for hats, prefer diagonals since they may accidentally pass through cardinals on their way back to center
+		if(a.type == TYPE_HAT)
+		{
+			aVal = a.numHatDirs();
+			bVal = b.numHatDirs();
+			if(aVal != bVal)
+				return aVal > bVal;
+		}
+
+		// otherwise, prefer the input detected most recently
+		aVal = mHeldInputs[a].order;
+		bVal = mHeldInputs[b].order;
+		return aVal > bVal;
+	});
+
+	std::stringstream ss;
+	ss << "Detected " << inputs.size() << " inputs:";
+	for(auto it = inputs.begin();  it != inputs.end();  it++)
+		ss << "\n" << it->string() << " (#" << mHeldInputs[*it].order << ", " << mHeldInputs[*it].maxvalue << ")";
+	mWindow->pushGui(new GuiMsgBox(mWindow, ss.str(), "OK", nullptr));
+
+	return inputs[0];
 }
 
 // move cursor to the next thing if we're configuring all,
@@ -366,7 +456,7 @@ bool GuiInputConfig::filterTrigger(Input input, InputConfig* config, int inputId
 		// digital triggers are unwanted
 		if(input.type == TYPE_BUTTON && (input.id == 6 || input.id == 7))
 		{
-			mHoldingInput = false;
+			mHeldInputs.clear();
 			return true;
 		}
 	}

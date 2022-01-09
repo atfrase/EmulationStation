@@ -6,7 +6,24 @@
 #include "components/ComponentGrid.h"
 #include "components/NinePatchComponent.h"
 #include "GuiComponent.h"
-#include <set>
+
+struct HeldInput
+{
+	int order;
+	int curvalue;
+	int maxvalue;
+
+	HeldInput()
+	{
+		order = -1;
+		curvalue = 0;
+		maxvalue = 0;
+	}
+
+	HeldInput(int o, int v) : order(o), curvalue(v), maxvalue(v)
+	{
+	}
+};
 
 class ComponentList;
 class TextComponent;
@@ -31,6 +48,7 @@ private:
 	void clearAssignment(int inputId);
 	bool filterTrigger(Input input, InputConfig* config, int inputId);
 
+	Input getBestHeldInput();
 	void rowDone();
 
 	NinePatchComponent mBackground;
@@ -47,10 +65,8 @@ private:
 	bool mConfiguringRow; // next input captured by mList will be interpretted as a remap
 	bool mConfiguringAll; // move the cursor down after configuring a row and start configuring the next row until we reach the bottom
 
-	bool mHoldingInput;
-	Input mHeldInput;
-	std::vector<Input> mHeldInputs;
-	std::set<std::pair<InputType,int>> mHeldInputsUnique;
+	std::map<Input,HeldInput> mHeldInputs;
+	int mHeldInputCount;
 	int mHeldTime;
 	int mHeldInputId;
 	bool mSkipAxis;
