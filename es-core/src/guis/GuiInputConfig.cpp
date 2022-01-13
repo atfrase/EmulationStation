@@ -172,7 +172,7 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 					// maxvalue only matters for axes, and they're polled in update() instead
 				}
 			}
-			else
+			else if(mHeldInputs.size())
 			{
 				// on input release, update matching held input(s) and check if any others remain held
 				bool done = true;
